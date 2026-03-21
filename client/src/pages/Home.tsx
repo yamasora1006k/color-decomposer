@@ -80,18 +80,19 @@ function rgbToHex(r: number, g: number, b: number): string {
   );
 }
 
-function generateColorSteps(hexColor: string, steps: number = 5): ColorStep[] {
+function generateColorSteps(hexColor: string, endColor: string, steps: number = 5): ColorStep[] {
   const rgb = hexToRgb(hexColor);
-  if (!rgb) return [];
+  const endRgb = hexToRgb(endColor);
+  if (!rgb || !endRgb) return [];
 
   const result: ColorStep[] = [];
 
   for (let i = 0; i < steps; i++) {
-    // Linear interpolation from input color to white (#ffffff)
+    // Linear interpolation from input color to end color
     const ratio = i / (steps - 1); // 0 to 1
-    const r = Math.round(rgb.r + (255 - rgb.r) * ratio);
-    const g = Math.round(rgb.g + (255 - rgb.g) * ratio);
-    const b = Math.round(rgb.b + (255 - rgb.b) * ratio);
+    const r = Math.round(rgb.r + (endRgb.r - rgb.r) * ratio);
+    const g = Math.round(rgb.g + (endRgb.g - rgb.g) * ratio);
+    const b = Math.round(rgb.b + (endRgb.b - rgb.b) * ratio);
 
     const hsl = rgbToHsl(r, g, b);
 
@@ -184,11 +185,13 @@ export default function Home() {
   const [inputColor, setInputColor] = useState("#002AFF");
   const [isValidColor, setIsValidColor] = useState(true);
   const [stepCount, setStepCount] = useState(5);
+  const [endColor, setEndColor] = useState("#FFFFFF");
+  const [isValidEndColor, setIsValidEndColor] = useState(true);
 
   const colorSteps = useMemo(() => {
-    if (!isValidColor) return [];
-    return generateColorSteps(inputColor, stepCount);
-  }, [inputColor, isValidColor, stepCount]);
+    if (!isValidColor || !isValidEndColor) return [];
+    return generateColorSteps(inputColor, endColor, stepCount);
+  }, [inputColor, isValidColor, endColor, isValidEndColor, stepCount]);
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -196,6 +199,14 @@ export default function Home() {
     // Validate hex color
     const isValid = /^#[0-9A-F]{6}$/i.test(value);
     setIsValidColor(isValid);
+  };
+
+  const handleEndColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEndColor(value);
+    // Validate hex color
+    const isValid = /^#[0-9A-F]{6}$/i.test(value);
+    setIsValidEndColor(isValid);
   };
 
   return (
@@ -273,6 +284,35 @@ export default function Home() {
                     />
                   </motion.div>
                 )}
+
+                {/* End Color Input */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    終点色（お尻の色）
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={endColor}
+                      onChange={handleEndColorChange}
+                      placeholder="#FFFFFF"
+                      className="font-mono text-lg bg-input/50 border-border/50"
+                    />
+                    <motion.input
+                      type="color"
+                      value={endColor}
+                      onChange={(e) => setEndColor(e.target.value)}
+                      className="w-12 h-10 rounded cursor-pointer border border-border"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                    />
+                  </div>
+                  {!isValidEndColor && (
+                    <p className="text-xs text-destructive mt-2">
+                      有効な16進数カラーコード（#RRGGBB）を入力してください
+                    </p>
+                  )}
+                </div>
 
                 {/* Step Count Slider */}
                 <div>
