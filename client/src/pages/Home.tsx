@@ -87,10 +87,11 @@ function generateColorSteps(hexColor: string, steps: number = 5): ColorStep[] {
   const result: ColorStep[] = [];
 
   for (let i = 0; i < steps; i++) {
-    const opacity = 1 - (i / (steps - 1)) * 0.8; // From 1.0 to 0.2
-    const r = Math.round(rgb.r + (255 - rgb.r) * (1 - opacity));
-    const g = Math.round(rgb.g + (255 - rgb.g) * (1 - opacity));
-    const b = Math.round(rgb.b + (255 - rgb.b) * (1 - opacity));
+    // Linear interpolation from input color to white (#ffffff)
+    const ratio = i / (steps - 1); // 0 to 1
+    const r = Math.round(rgb.r + (255 - rgb.r) * ratio);
+    const g = Math.round(rgb.g + (255 - rgb.g) * ratio);
+    const b = Math.round(rgb.b + (255 - rgb.b) * ratio);
 
     const hsl = rgbToHsl(r, g, b);
 
@@ -98,7 +99,7 @@ function generateColorSteps(hexColor: string, steps: number = 5): ColorStep[] {
       hex: rgbToHex(r, g, b),
       rgb: { r, g, b },
       hsl,
-      opacity,
+      opacity: 1 - ratio, // For reference
     });
   }
 
@@ -182,11 +183,12 @@ function ColorSwatch({
 export default function Home() {
   const [inputColor, setInputColor] = useState("#002AFF");
   const [isValidColor, setIsValidColor] = useState(true);
+  const [stepCount, setStepCount] = useState(5);
 
   const colorSteps = useMemo(() => {
     if (!isValidColor) return [];
-    return generateColorSteps(inputColor);
-  }, [inputColor, isValidColor]);
+    return generateColorSteps(inputColor, stepCount);
+  }, [inputColor, isValidColor, stepCount]);
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -271,6 +273,25 @@ export default function Home() {
                     />
                   </motion.div>
                 )}
+
+                {/* Step Count Slider */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    分解ステップ数: <span className="text-primary">{stepCount}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="2"
+                    max="20"
+                    value={stepCount}
+                    onChange={(e) => setStepCount(parseInt(e.target.value))}
+                    className="w-full h-2 bg-input rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>2</span>
+                    <span>20</span>
+                  </div>
+                </div>
               </div>
             </Card>
           </motion.div>
